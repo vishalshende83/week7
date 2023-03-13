@@ -36,12 +36,13 @@ podTemplate(yaml: '''
               path: config.json
 ''') {
   node(POD_LABEL) {
-    stage('Build a gradle project') {
-      git branch: 'main', url: 'https://github.com/vishalshende83/week6.git'
+    try
+	{
+     stage('Build a gradle project') {
+	  git branch: 'main', url: 'https://github.com/vishalshende83/week6.git'
       container('gradle') {
         stage('Build a gradle project') {
           sh '''
-          cd /home/jenkins/agent/workspace/week7_mb01
           chmod +x gradlew
           ./gradlew build
           mv ./build/libs/calculator-0.0.1-SNAPSHOT.jar /mnt
@@ -49,25 +50,90 @@ podTemplate(yaml: '''
         }
 
         stage('Unit Test') {
-          sh 'printenv'
+		if (env.BRANCH_NAME == 'feature' || env.BRANCH_NAME == 'master')
+		 {
+          echo 'Unit Test for branch : ${env.BRANCH_NAME}'
+		  sh '''
+          ./gradlew test
+          '''
+		 }
+		else
+		 {
+		  echo 'Unit Test Skipped for branch : ${env.BRANCH_NAME}'
+		  }
         }
+		stage('Code Coverage') {
+		if (env.BRANCH_NAME == 'master')
+		 {
+          echo 'Code Coverage for branch : ${env.BRANCH_NAME}'
+		  sh '''
+          ./gradlew jacocoTestCoverageVerification
+          ./gradlew jacocoTestReport
+          '''
+		 }
+		 else
+		 {
+		  echo 'Code Coverage Skipped for branch : ${env.BRANCH_NAME}'
+		 }
+		
+        }
+		stage('Static code analysis') {
+		if (env.BRANCH_NAME == 'feature' || env.BRANCH_NAME == 'master')
+		 {
+          echo 'Static code analysis for branch : ${env.BRANCH_NAME}'
+		  sh '''
+          ./gradlew checkstyleMain
+          ./gradlew jacocoTestReport
+          '''
+		 }
+		 else
+		 {
+		  echo 'Static code analysis Skipped for branch : ${env.BRANCH_NAME}'
+		 }
+		
+       }
       }
-    }
-
-    
-    stage('Build Java Image') {
-     container('kaniko') {
+	 }
+	  try
+	  {
+	   stage('Build Java Image') {
+       container('kaniko') {
         stage('Build a gradle project') {
+		  if (env.BRANCH_NAME == 'feature' || env.BRANCH_NAME == 'master')
+          {			  
           sh '''
           echo 'FROM openjdk:8-jre' > Dockerfile
           echo 'COPY ./calculator-0.0.1-SNAPSHOT.jar app.jar' >> Dockerfile
           echo 'ENTRYPOINT ["java", "-jar", "app.jar"]' >> Dockerfile
           mv /mnt/calculator-0.0.1-SNAPSHOT.jar .
-          /kaniko/executor --context `pwd` --destination vishalshende83/hello-kaniko:1.0
+		  if(env.BRANCH_NAME == 'feature')
+		  {
+			  /kaniko/executor --context `pwd` --destination vishalshende83/calculator-feature:0.1
+	      }
+		  else
+		  {
+			/kaniko/executor --context `pwd` --destination vishalshende83/calculator:1.0  
+		  }
+          
           '''
+		  }
+		  else
+		  {echo 'Skipping Build Java Image.Branch is : ${env.BRANCH_NAME} '}
+         }
         }
-      }
-    }
+       }
+	  }
+	 catch (Exception E) 
+	 {
+		echo 'Failure detected while Building Java Image'
+	 }
+	 
+	}
+	catch (Exception E) 
+	{
+		echo 'Failure detected while building a gradle project'
+	}
 
+    
   }
 }
