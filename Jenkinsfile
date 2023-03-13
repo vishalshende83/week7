@@ -41,16 +41,20 @@ podTemplate(yaml: '''
       container('gradle') {
         stage('Build a gradle project') {
           sh '''
-          sh 'printenv'
           cd /home/jenkins/agent/workspace/week7_mb01
           chmod +x gradlew
           ./gradlew build
           mv ./build/libs/calculator-0.0.1-SNAPSHOT.jar /mnt
           '''
         }
+
+        stage('Unit Test') {
+          sh 'printenv'
+        }
       }
     }
 
+    
     stage('Build Java Image') {
      container('kaniko') {
         stage('Build a gradle project') {
