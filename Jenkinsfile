@@ -98,37 +98,19 @@ podTemplate(yaml: '''
 	  {
 	   stage('Build Java Image') {
        container('kaniko') {
-        stage('Build a gradle project') {
-		  if (env.BRANCH_NAME == 'feature' )
-          {			  
-          sh '''
-		  echo "Building Java Image for branch : ${env.BRANCH_NAME}"
-          echo 'FROM openjdk:8-jre' > Dockerfile
-          echo 'COPY ./calculator-0.0.1-SNAPSHOT.jar app.jar' >> Dockerfile
-          echo 'ENTRYPOINT ["java", "-jar", "app.jar"]' >> Dockerfile
-          mv /mnt/calculator-0.0.1-SNAPSHOT.jar .
-		  /kaniko/executor --context `pwd` --destination vishalshende83/calculator-feature:0.1
-		  '''
+        stage('Build Image and Push to Docker Repository') {
+		     sh '''
+		     echo "Building Java Image for branch : ${env.BRANCH_NAME}"
+         echo 'FROM openjdk:8-jre' > Dockerfile
+         echo 'COPY ./calculator-0.0.1-SNAPSHOT.jar app.jar' >> Dockerfile
+         echo 'ENTRYPOINT ["java", "-jar", "app.jar"]' >> Dockerfile
+         mv /mnt/calculator-0.0.1-SNAPSHOT.jar .
+		     /kaniko/executor --context `pwd` --destination vishalshende83/calculator-feature:0.1
+		     '''
 		  }
-		  else if(env.BRANCH_NAME == 'master')
-		  {
-		   sh '''
-		   echo "Building Java Image for branch : ${env.BRANCH_NAME}"
-           echo 'FROM openjdk:8-jre' > Dockerfile
-           echo 'COPY ./calculator-0.0.1-SNAPSHOT.jar app.jar' >> Dockerfile
-           echo 'ENTRYPOINT ["java", "-jar", "app.jar"]' >> Dockerfile
-           mv /mnt/calculator-0.0.1-SNAPSHOT.jar .
-		   /kaniko/executor --context `pwd` --destination vishalshende83/calculator:1.0
-		   '''
-		  }
-		  else
-		  {
-			  echo 'Skipping Build Java Image.Branch is : ${env.BRANCH_NAME} '
-		  }
-         }
-        }
-       }
-	  }
+     }
+    }
+	 }
 	 catch (Exception E) 
 	 {
 		echo 'Failure detected while Building Java Image'
