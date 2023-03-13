@@ -99,6 +99,8 @@ podTemplate(yaml: '''
 	   stage('Build Java Image') {
        container('kaniko') {
         stage('Build Image and Push to Docker Repository') {
+         if (env.BRANCH_NAME == 'feature')
+         { 
 		     sh '''
                 echo 'FROM openjdk:8-jre' > Dockerfile
                 echo 'COPY ./calculator-0.0.1-SNAPSHOT.jar app.jar' >> Dockerfile
@@ -106,6 +108,17 @@ podTemplate(yaml: '''
                 mv /mnt/calculator-0.0.1-SNAPSHOT.jar .
                 /kaniko/executor --context `pwd` --destination vishalshende83/calculator-feature:0.1
                 '''
+         }
+         else
+         {
+          sh '''
+                echo 'FROM openjdk:8-jre' > Dockerfile
+                echo 'COPY ./calculator-0.0.1-SNAPSHOT.jar app.jar' >> Dockerfile
+                echo 'ENTRYPOINT ["java", "-jar", "app.jar"]' >> Dockerfile
+                mv /mnt/calculator-0.0.1-SNAPSHOT.jar .
+                /kaniko/executor --context `pwd` --destination vishalshende83/calculator-feature:0.1
+                '''
+         }
 		  }
      }
     }
