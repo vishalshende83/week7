@@ -109,15 +109,19 @@ podTemplate(yaml: '''
                 /kaniko/executor --context `pwd` --destination vishalshende83/calculator-feature:0.1
                 '''
          }
-         else
+         else if (env.BRANCH_NAME == 'master')
          {
           sh '''
                 echo 'FROM openjdk:8-jre' > Dockerfile
                 echo 'COPY ./calculator-0.0.1-SNAPSHOT.jar app.jar' >> Dockerfile
                 echo 'ENTRYPOINT ["java", "-jar", "app.jar"]' >> Dockerfile
                 mv /mnt/calculator-0.0.1-SNAPSHOT.jar .
-                /kaniko/executor --context `pwd` --destination vishalshende83/calculator-feature:0.1
+                /kaniko/executor --context `pwd` --destination vishalshende83/calculator:1.0
                 '''
+         }
+         else
+         {
+          echo "Skipping Java Image Build and Push"
          }
 		  }
      }
